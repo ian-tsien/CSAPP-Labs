@@ -8,7 +8,7 @@ The csapp labs are hands-on assignments from the "Computer Systems: A Programmer
 
 ## Lab List
 
-- [ ] Data Lab
+- [x] Data Lab
 - [ ] Bomb Lab
 - [ ] Attack Lab
 - [ ] Architecture Lab
@@ -17,9 +17,3 @@ The csapp labs are hands-on assignments from the "Computer Systems: A Programmer
 - [ ] Shell Lab
 - [ ] Malloc Lab
 - [ ] Proxy Lab
-
----
-
-## Study Notes
-
-1. Pending

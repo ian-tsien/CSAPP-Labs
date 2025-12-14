@@ -1,8 +1,8 @@
-/* 
- * CS:APP Data Lab 
- * 
+/*
+ * CS:APP Data Lab
+ *
  * <Please put your name and userid here>
- * 
+ *
  * bits.c - Source file with your solutions to the Lab.
  *          This is the file you will hand in to your instructor.
  *
@@ -10,7 +10,7 @@
  * compiler. You can still use printf for debugging without including
  * <stdio.h>, although you might get a compiler warning. In general,
  * it's not good practice to ignore compiler warnings, but in this
- * case it's OK.  
+ * case it's OK.
  */
 
 #if 0
@@ -126,171 +126,204 @@ NOTES:
  * STEP 2: Modify the following functions according the coding rules.
  * 
  *   IMPORTANT. TO AVOID GRADING SURPRISES:
- *   1. Use the dlc compiler to check that your solutions conform
- *      to the coding rules.
- *   2. Use the BDD checker to formally verify that your solutions produce 
- *      the correct answers.
+ *   1. Use the dlc compiler to check that your solutions conform to the coding
+ *      rules.
+ *   2. Use the BDD checker to formally verify that your solutions produce the
+ *      correct answers.
  */
-
 
 #endif
-//1
-/* 
- * bitXor - x^y using only ~ and & 
- *   Example: bitXor(4, 5) = 1
- *   Legal ops: ~ &
- *   Max ops: 14
- *   Rating: 1
+// 1
+/*
+ * bitXor - x^y using only ~ and & Example: bitXor(4, 5) = 1 Legal ops: ~ & Max
+ * ops: 14 Rating: 1
  */
 int bitXor(int x, int y) {
-  return 2;
+  int p = x & y;
+  int q = (~x) & (~y);
+  return (~p) & (~q);
 }
-/* 
- * tmin - return minimum two's complement integer 
- *   Legal ops: ! ~ & ^ | + << >>
- *   Max ops: 4
- *   Rating: 1
- */
-int tmin(void) {
-
-  return 2;
-
-}
-//2
 /*
- * isTmax - returns 1 if x is the maximum, two's complement number,
- *     and 0 otherwise 
- *   Legal ops: ! ~ & ^ | +
- *   Max ops: 10
- *   Rating: 1
+ * tmin - return minimum two's complement integer Legal ops: ! ~ & ^ | + << >>
+ * Max ops: 4 Rating: 1
+ */
+int tmin(void) { return 1 << 31; }
+// 2
+/*
+ * isTmax - returns 1 if x is the maximum, two's complement number, and 0
+ * otherwise Legal ops: ! ~ & ^ | + Max ops: 10 Rating: 1
  */
 int isTmax(int x) {
-  return 2;
+  int p = x + 1;
+  int q = ~p + 1;
+  return (!(p ^ q)) & !!(p);
 }
-/* 
- * allOddBits - return 1 if all odd-numbered bits in word set to 1
- *   where bits are numbered from 0 (least significant) to 31 (most significant)
- *   Examples allOddBits(0xFFFFFFFD) = 0, allOddBits(0xAAAAAAAA) = 1
- *   Legal ops: ! ~ & ^ | + << >>
- *   Max ops: 12
- *   Rating: 2
+/*
+ * allOddBits - return 1 if all odd-numbered bits in word set to 1 where bits
+ * are numbered from 0 (least significant) to 31 (most significant) Examples
+ * allOddBits(0xFFFFFFFD) = 0, allOddBits(0xAAAAAAAA) = 1 Legal ops: ! ~ & ^ |
+ * + << >> Max ops: 12 Rating: 2
  */
 int allOddBits(int x) {
-  return 2;
+  int p = 0x55 | (0x55 << 8);
+  int q = (p << 16) | p;
+  return !(~(x | q));
 }
-/* 
- * negate - return -x 
- *   Example: negate(1) = -1.
- *   Legal ops: ! ~ & ^ | + << >>
- *   Max ops: 5
- *   Rating: 2
+/*
+ * negate - return -x Example: negate(1) = -1. Legal ops: ! ~ & ^ | + << >> Max
+ * ops: 5 Rating: 2
  */
-int negate(int x) {
-  return 2;
-}
-//3
-/* 
- * isAsciiDigit - return 1 if 0x30 <= x <= 0x39 (ASCII codes for characters '0' to '9')
- *   Example: isAsciiDigit(0x35) = 1.
- *            isAsciiDigit(0x3a) = 0.
- *            isAsciiDigit(0x05) = 0.
- *   Legal ops: ! ~ & ^ | + << >>
- *   Max ops: 15
- *   Rating: 3
+int negate(int x) { return ~x + 1; }
+// 3
+/*
+ * isAsciiDigit - return 1 if 0x30 <= x <= 0x39 (ASCII codes for characters '0'
+ * to '9') Example: isAsciiDigit(0x35) = 1. isAsciiDigit(0x3a) = 0.
+ * isAsciiDigit(0x05) = 0. Legal ops: ! ~ & ^ | + << >> Max ops: 15 Rating: 3
  */
 int isAsciiDigit(int x) {
-  return 2;
+  int p = !((x >> 4) ^ 0x03);
+  int q = !(x & 0x08);
+  int m = !(x & 0x06);
+  return p & (q | m);
 }
-/* 
- * conditional - same as x ? y : z 
- *   Example: conditional(2,4,5) = 4
- *   Legal ops: ! ~ & ^ | + << >>
- *   Max ops: 16
- *   Rating: 3
+/*
+ * conditional - same as x ? y : z Example: conditional(2,4,5) = 4 Legal ops: !
+ * ~ & ^ | + << >> Max ops: 16 Rating: 3
  */
 int conditional(int x, int y, int z) {
-  return 2;
+  int p = ~(!x) + 1;
+  return (p & z) | (~p & y);
 }
-/* 
- * isLessOrEqual - if x <= y  then return 1, else return 0 
- *   Example: isLessOrEqual(4,5) = 1.
- *   Legal ops: ! ~ & ^ | + << >>
- *   Max ops: 24
- *   Rating: 3
+/*
+ * isLessOrEqual - if x <= y  then return 1, else return 0 Example:
+ * isLessOrEqual(4,5) = 1. Legal ops: ! ~ & ^ | + << >> Max ops: 24 Rating: 3
  */
 int isLessOrEqual(int x, int y) {
-  return 2;
+  int p = x >> 31;
+  int q = y >> 31;
+  int m = p & (!q);
+  int k = (!(p ^ q));
+  int t = !((y + (~x + 1)) >> 31);
+  return m | (k & t);
 }
-//4
-/* 
- * logicalNeg - implement the ! operator, using all of 
- *              the legal operators except !
- *   Examples: logicalNeg(3) = 0, logicalNeg(0) = 1
- *   Legal ops: ~ & ^ | + << >>
- *   Max ops: 12
- *   Rating: 4 
+// 4
+/*
+ * logicalNeg - implement the ! operator, using all of the legal operators
+ * except ! Examples: logicalNeg(3) = 0, logicalNeg(0) = 1 Legal ops: ~ & ^ | +
+ * << >> Max ops: 12 Rating: 4
  */
 int logicalNeg(int x) {
-  return 2;
+  int p = (x >> 16) | x;
+  int q = (p >> 8) | p;
+  int k = (q >> 4) | q;
+  int m = (k >> 2) | k;
+  int t = (m >> 1) | m;
+  return (t & 1) ^ 1;
 }
 /* howManyBits - return the minimum number of bits required to represent x in
- *             two's complement
- *  Examples: howManyBits(12) = 5
- *            howManyBits(298) = 10
- *            howManyBits(-5) = 4
- *            howManyBits(0)  = 1
- *            howManyBits(-1) = 1
- *            howManyBits(0x80000000) = 32
- *  Legal ops: ! ~ & ^ | + << >>
- *  Max ops: 90
- *  Rating: 4
+ * two's complement Examples: howManyBits(12) = 5 howManyBits(298) = 10
+ * howManyBits(-5) = 4 howManyBits(0)  = 1 howManyBits(-1) = 1
+ * howManyBits(0x80000000) = 32 Legal ops: ! ~ & ^ | + << >> Max ops: 90
+ * Rating: 4
  */
 int howManyBits(int x) {
-  return 0;
+  int p = ~((x >> 31) & 1) + 1;
+  int q1 = p ^ x;
+  int bit_16 = (!!(q1 >> 16)) << 4;
+  int q2 = q1 >> bit_16;
+  int bit_8 = (!!(q2 >> 8)) << 3;
+  int q3 = q2 >> bit_8;
+  int bit_4 = (!!(q3 >> 4)) << 2;
+  int q4 = q3 >> bit_4;
+  int bit_2 = (!!(q4 >> 2)) << 1;
+  int q5 = q4 >> bit_2;
+  int bit_1 = !!(q5 >> 1);
+  int q6 = q5 >> bit_1;
+  return bit_16 + bit_8 + bit_4 + bit_2 + bit_1 + (q6 & 1) + 1;
 }
-//float
-/* 
- * floatScale2 - Return bit-level equivalent of expression 2*f for
- *   floating point argument f.
- *   Both the argument and result are passed as unsigned int's, but
- *   they are to be interpreted as the bit-level representation of
- *   single-precision floating point values.
- *   When argument is NaN, return argument
- *   Legal ops: Any integer/unsigned operations incl. ||, &&. also if, while
- *   Max ops: 30
- *   Rating: 4
+// float
+/*
+ * floatScale2 - Return bit-level equivalent of expression 2*f for floating
+ * point argument f. Both the argument and result are passed as unsigned int's,
+ * but they are to be interpreted as the bit-level representation of
+ * single-precision floating point values. When argument is NaN, return
+ * argument Legal ops: Any integer/unsigned operations incl. ||, &&. also if,
+ * while max ops: 30 rating: 4
  */
 unsigned floatScale2(unsigned uf) {
-  return 2;
+  int exp = (uf >> 23) & 0xff;
+  int sign = (1 << 31) & uf;
+  if (exp == 0xff) {
+    return uf;
+  }
+  if (exp == 0) {
+    return (uf << 1) | sign;
+  }
+  if (exp == 0xfe) {
+    return 0x7f800000 | sign;
+  }
+  exp = exp + 1;
+
+  return (uf & 0x7fffff) | (exp << 23) | sign;
 }
-/* 
- * floatFloat2Int - Return bit-level equivalent of expression (int) f
- *   for floating point argument f.
- *   Argument is passed as unsigned int, but
- *   it is to be interpreted as the bit-level representation of a
- *   single-precision floating point value.
- *   Anything out of range (including NaN and infinity) should return
- *   0x80000000u.
- *   Legal ops: Any integer/unsigned operations incl. ||, &&. also if, while
- *   Max ops: 30
- *   Rating: 4
+/*
+ * floatFloat2Int - Return bit-level equivalent of expression (int) f for
+ * floating point argument f. Argument is passed as unsigned int, but it is to
+ * be interpreted as the bit-level representation of a single-precision
+ * floating point value. Anything out of range (including NaN and infinity)
+ * should return 0x80000000u. Legal ops: Any integer/unsigned operations incl.
+ * ||, &&. also if, while Max ops: 30 Rating: 4
  */
 int floatFloat2Int(unsigned uf) {
-  return 2;
+  int sign = uf >> 31;
+  int exp = (uf >> 23) & 0xff;
+  int frac = uf & 0x7fffff;
+  int p = exp - 127;
+  int q = frac | 0x800000;
+  if (exp == 0xff) {
+    return 0x80000000u;
+  }
+  if (exp == 0) {
+    return 0;
+  }
+  if (p > 30) {
+    return 0x80000000u;
+  }
+  if (p < 0) {
+    return 0;
+  }
+  if (p > 22) {
+    q <<= (p - 23);
+  } else {
+    q >>= (23 - p);
+  }
+  if (sign) {
+    return ~q + 1;
+  }
+  return q;
 }
-/* 
- * floatPower2 - Return bit-level equivalent of the expression 2.0^x
- *   (2.0 raised to the power x) for any 32-bit integer x.
+/*
+ * floatPower2 - Return bit-level equivalent of the expression 2.0^x (2.0
+ * raised to the power x) for any 32-bit integer x.
  *
  *   The unsigned value that is returned should have the identical bit
- *   representation as the single-precision floating-point number 2.0^x.
- *   If the result is too small to be represented as a denorm, return
+ *   representation as the single-precision floating-point number 2.0^x. If the
+ *   result is too small to be represented as a denorm, return
  *   0. If too large, return +INF.
- * 
- *   Legal ops: Any integer/unsigned operations incl. ||, &&. Also if, while 
- *   Max ops: 30 
- *   Rating: 4
+ *
+ *   Legal ops: Any integer/unsigned operations incl. ||, &&. Also if, while
+ *   Max ops: 30 Rating: 4
  */
 unsigned floatPower2(int x) {
-    return 2;
+  int exp = x + 127;
+  if (x < -149) {
+    return 0;
+  }
+  if (x > 127) {
+    return 0x7f800000;
+  }
+  if (x > -127) {
+    return exp << 23;
+  }
+  return 1 << (149 + x);
 }
