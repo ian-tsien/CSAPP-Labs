@@ -13,7 +13,7 @@ The csapp labs are hands-on assignments from the "Computer Systems: A Programmer
 - [x] Attack Lab
 - [x] Architecture Lab
 - [x] Cache Lab
-- [ ] Shell Lab
+- [x] Shell Lab
 - [ ] Malloc Lab
 - [ ] Proxy Lab
 
