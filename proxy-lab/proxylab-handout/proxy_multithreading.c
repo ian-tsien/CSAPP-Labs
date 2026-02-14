@@ -6,7 +6,6 @@
 #include <pthread.h>
 #include <semaphore.h>
 #include <signal.h>
-#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -19,9 +18,7 @@
 /* Recommended max cache and object sizes */
 #define MAX_CACHE_SIZE 1049000
 #define MAX_OBJECT_SIZE 102400
-#define CACHE_NUM 10
 
-/* Multithreading options */
 #define SBUFSIZE 16
 #define NTHREADS 4
 
@@ -40,37 +37,17 @@ typedef struct {
   sem_t items; /* Counts available items */
 } Sbuf;
 
-typedef struct {
-  char hostname[MAXLINE];
-  char query[MAXLINE];
-  char obj[MAX_OBJECT_SIZE];
-  size_t obj_size;
-  unsigned int time_point;
-} Block;
-
-typedef struct {
-  Block data[CACHE_NUM];
-  size_t data_size;
-} Cache;
-
-static Sbuf sbuf; /* Shared buffer of connected descriptors */
-static Cache cache;
-static sem_t mutex, w;
-static int readcnt;
-static unsigned int timestamp;
+Sbuf sbuf; /* Shared buffer of connected descriptors */
 
 void doit(int fd);
 int parse_uri(char *uri, char *hostname, char *query, char *port);
 int send_request(int fd, char *hostname, char *query);
-int send_back(int fd, rio_t *server_rio, char *obj, size_t *obj_size);
+int send_back(int fd, rio_t *server_rio);
 void *thread(void *vargp);
 void sbuf_init(Sbuf *sp, int n);
 void sbuf_deinit(Sbuf *sp);
 void sbuf_insert(Sbuf *sp, int item);
 int sbuf_remove(Sbuf *sp);
-void init_cache();
-int get_cache(int fd, char *hostname, char *query);
-int add_cache(char *hostname, char *query, char *obj, size_t obj_size);
 
 int main(int argc, char *argv[]) {
   int listenfd, connfd, rc, i;
@@ -95,8 +72,6 @@ int main(int argc, char *argv[]) {
     Pthread_create(&tid, NULL, thread, NULL);
   }
 
-  init_cache();
-
   while (1) {
     clientlen = sizeof(clientaddr);
     connfd = accept(listenfd, (SA *)&clientaddr, &clientlen);
@@ -113,7 +88,6 @@ int main(int argc, char *argv[]) {
     }
     sbuf_insert(&sbuf, connfd);
   }
-  Close(listenfd);
 }
 
 /*
@@ -123,8 +97,6 @@ void doit(int fd) {
   int server_fd;
   char buf[MAXLINE], method[MAXLINE], uri[MAXLINE], version[MAXLINE];
   char hostname[MAXLINE], query[MAXLINE], port[MAXLINE];
-  char obj[MAX_OBJECT_SIZE];
-  size_t obj_size;
   rio_t rio, server_rio;
 
   /* Read request line and headers */
@@ -143,11 +115,6 @@ void doit(int fd) {
     return;
   }
 
-  /* Try to get cache from cached list */
-  if (get_cache(fd, hostname, query)) {
-    return;
-  }
-
   /* Connect to server and send request */
   server_fd = open_clientfd(hostname, port);
   if (server_fd < 0) {
@@ -162,15 +129,10 @@ void doit(int fd) {
 
   /* Send back to client */
   rio_readinitb(&server_rio, server_fd);
-  if (!send_back(fd, &server_rio, obj, &obj_size)) {
+  if (!send_back(fd, &server_rio)) {
     fprintf(stderr, "send_back() error\n");
     close(server_fd);
     return;
-  }
-
-  /* Cache content received from server */
-  if (obj_size <= MAX_OBJECT_SIZE) {
-    add_cache(hostname, query, obj, obj_size);
   }
 
   if (close(server_fd) < 0) {
@@ -243,7 +205,7 @@ int send_request(int fd, char *hostname, char *query) {
   if (rio_writen(fd, buf, strlen(buf)) <= 0) {
     return 0;
   }
-  strcpy(buf, "Connection: close\r\n");
+  strcpy(buf, "Connetction: close\r\n");
   if (rio_writen(fd, buf, strlen(buf)) <= 0) {
     return 0;
   }
@@ -261,23 +223,15 @@ int send_request(int fd, char *hostname, char *query) {
 /*
  * send_back - Send back response sent from server to the client
  */
-int send_back(int fd, rio_t *server_rio, char *obj, size_t *obj_size) {
+int send_back(int fd, rio_t *server_rio) {
   ssize_t n;
   char buf[MAXBUF];
-  char *ptr = obj;
-  size_t size = 0;
 
   while ((n = rio_readlineb(server_rio, buf, MAXBUF)) > 0) {
     if (rio_writen(fd, buf, n) <= 0) {
       return 0;
     }
-    if ((size + n) <= MAX_OBJECT_SIZE) {
-      strncpy(ptr, buf, n);
-      ptr += n;
-    }
-    size += n;
   }
-  *obj_size = size;
   return 1;
 }
 
@@ -333,83 +287,4 @@ int sbuf_remove(Sbuf *sp) {
   V(&sp->mutex);
   V(&sp->slots);
   return item;
-}
-
-/*
- * init_cache - Init global cache params
- */
-void init_cache() {
-  timestamp = 0;
-  readcnt = 0;
-  sem_init(&mutex, 0, 1);
-  sem_init(&w, 0, 1);
-  cache.data_size = 0;
-}
-
-/*
- * get_cache - Get cache from cached list and transmit the object to fd
- */
-int get_cache(int fd, char *hostname, char *query) {
-  int hit_flag = 0;
-
-  P(&mutex);
-  readcnt++;
-  if (readcnt == 1) {
-    P(&w);
-  }
-  V(&mutex);
-
-  for (int i = 0; i < cache.data_size; i++) {
-    if (!strcmp(hostname, cache.data[i].hostname) &&
-        !strcmp(query, cache.data[i].query)) {
-      P(&mutex);
-      cache.data[i].time_point = timestamp++;
-      V(&mutex);
-      rio_writen(fd, cache.data[i].obj, cache.data[i].obj_size);
-      hit_flag = 1;
-      break;
-    }
-  }
-
-  P(&mutex);
-  readcnt--;
-  if (readcnt == 0) {
-    V(&w);
-  }
-  V(&mutex);
-
-  return hit_flag;
-}
-
-/*
- * add_cache - Add cache to caches list if any space remained
- */
-int add_cache(char *hostname, char *query, char *obj, size_t obj_size) {
-  size_t index;
-  unsigned int tt;
-
-  P(&w);
-  if (cache.data_size == CACHE_NUM) {
-    tt = timestamp;
-    for (int i = 0; i < CACHE_NUM; i++) {
-      if (cache.data[i].time_point < tt) {
-        tt = cache.data[i].time_point;
-        index = i;
-      }
-    }
-    strcpy(cache.data[index].hostname, hostname);
-    strcpy(cache.data[index].query, query);
-    strncpy(cache.data[index].obj, obj, obj_size);
-    cache.data[index].obj_size = obj_size;
-    cache.data[index].time_point = timestamp++;
-  } else {
-    strcpy(cache.data[cache.data_size].hostname, hostname);
-    strcpy(cache.data[cache.data_size].query, query);
-    strncpy(cache.data[cache.data_size].obj, obj, obj_size);
-    cache.data[cache.data_size].obj_size = obj_size;
-    cache.data[cache.data_size].time_point = timestamp++;
-    cache.data_size++;
-  }
-  V(&w);
-  return 1;
 }
